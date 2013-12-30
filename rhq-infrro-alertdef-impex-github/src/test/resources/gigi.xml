@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?><alertDefinitions>
+<alertDefinition>
+<resourceName>vladesk</resourceName>
+<resourceType>Windows</resourceType>
+<alertName>gigi</alertName>
+<description/>
+<priority>MEDIUM</priority>
+<conditions/>
+<condition>
+<categoryName>THRESHOLD</categoryName>
+<comparator>&gt;</comparator>
+<logs>[]</logs>
+<measurementDefinition>[MeasurementDefinition,id=10031,name=CpuPerc.user]</measurementDefinition>
+<conditionName>User Load</conditionName>
+<option/>
+<threshold>0.8</threshold>
+</condition>
+<condition>
+<categoryName>AVAILABILITY</categoryName>
+<comparator/>
+<logs>[]</logs>
+<measurementDefinition/>
+<conditionName>AVAIL_GOES_DOWN</conditionName>
+<option/>
+<threshold>null</threshold>
+</condition>
+<conditionExpression>ANY</conditionExpression>
+<notifications>
+<notification>
+<configuration>&lt;?xml version="1.0" encoding="UTF-8" standalone="yes"?&gt;
+&lt;configuration&gt;
+    &lt;id&gt;13421&lt;/id&gt;
+    &lt;version&gt;0&lt;/version&gt;
+    &lt;ctime&gt;1373548599542&lt;/ctime&gt;
+    &lt;mtime&gt;1373548599542&lt;/mtime&gt;
+    &lt;propertySimple&gt;
+        &lt;id&gt;22291&lt;/id&gt;
+        &lt;name&gt;subjectId&lt;/name&gt;
+        &lt;stringValue&gt;|2|&lt;/stringValue&gt;
+    &lt;/propertySimple&gt;
+&lt;/configuration&gt;
+</configuration>
+</notification>
+</notifications>
+<dampening/>
+<dampeningCategory>NONE</dampeningCategory>
+</alertDefinition>
+</alertDefinitions>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<generic-plugin name="infrro-alertdef-impex"
+        displayName="Alert Definitions Import-Export"
+        xmlns="urn:xmlns:rhq-serverplugin.generic"
+        xmlns:c="urn:xmlns:rhq-configuration"
+        xmlns:serverplugin="urn:xmlns:rhq-serverplugin"
+        package="com.oneandone.infrro.rhq.serverplugins.alertdefimpex"
+        description="Server plugin for importing and exporting alert definitions"
+        disabledOnDiscovery="false"
+        version="1.0">
+
+    <serverplugin:help>
+        Server plug-in for importing and exporting alert definitions
+    </serverplugin:help>
+
+    <serverplugin:plugin-component class="AlertDefImpexComponent"> 
+    	<serverplugin:control name="exportDefinitions" displayName="Export Definitions" 
+    	                      description="Export Definitions">
+			<serverplugin:parameters>
+	            <c:simple-property name="Templates" 
+	        					type="boolean"
+	        					required="true" 
+	        					default="false" 
+	        					description="Only export templates?" />
+        	</serverplugin:parameters>                        
+
+			<serverplugin:results>
+				<c:simple-property name="exportResult" type="string" description="This is the result message."/>
+			</serverplugin:results>		
+		</serverplugin:control>
+
+    	<serverplugin:control name="importDefinitions" displayName="Import Definitions" 
+    	                      description="Import Definitions">
+			<serverplugin:results>
+				<c:simple-property name="importResult" type="string" description="gigi"/>
+			</serverplugin:results>		
+		</serverplugin:control>
+    </serverplugin:plugin-component>
+
+    <!-- Global preferences -->
+    <serverplugin:plugin-configuration>
+           	<c:simple-property name="workingFile" type="string" required="true"
+           					default="c:\Users\vlad\temp\gigi.xml" description="desc" />
+    </serverplugin:plugin-configuration>
+
+</generic-plugin>
