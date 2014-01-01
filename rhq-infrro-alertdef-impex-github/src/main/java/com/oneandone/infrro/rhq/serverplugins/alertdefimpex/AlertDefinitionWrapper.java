@@ -19,10 +19,14 @@ public class AlertDefinitionWrapper extends AlertDefinition {
 	private static final long serialVersionUID = 1L;
 
 	private Integer groupAlertDefinitionId;
+	
+	private String groupName;
 
 	private String resourceName;
 	
 	private String resourceTypeName;
+	
+	private String resourceTypePluginName;
 	
 	private Set<AlertConditionWrapper> conditionWrappers = new HashSet<AlertConditionWrapper>();
 	
@@ -35,13 +39,14 @@ public class AlertDefinitionWrapper extends AlertDefinition {
 
 		// i need the resourceType if is a template definition
 		Integer parentId = alertDefinition.getParentId();
-		if (parentId == 0) {
+		if (parentId == 0 && alertDefinition.getResourceType()!=null) {
 			this.setResourceTypeName(alertDefinition.getResourceType().getName());
+			this.setResourceTypePluginName(alertDefinition.getResourceType().getPlugin());
 		} else {
 			// i need the group if is a group definition
 			AlertDefinition groupAlertDefinition = alertDefinition.getGroupAlertDefinition();
-			if (groupAlertDefinition == null) {
-				this.setGroupAlertDefinition(alertDefinition.getGroupAlertDefinition());
+			if (alertDefinition.getResource()==null && groupAlertDefinition == null && alertDefinition.getGroup()!=null) {
+				this.setGroupName(alertDefinition.getGroup().getName());
 			} else {
 				// i need the resource name and type if is a solo definition
 				this.setResourceName(alertDefinition.getResource().getName());
@@ -116,6 +121,22 @@ public class AlertDefinitionWrapper extends AlertDefinition {
 
 	public void setConditionWrappers(Set<AlertConditionWrapper> conditionWrappers) {
 	    this.conditionWrappers = conditionWrappers;
+	}
+
+	public String getGroupName() {
+		return groupName;
+	}
+
+	public void setGroupName(String groupName) {
+		this.groupName = groupName;
+	}
+
+	public String getResourceTypePluginName() {
+		return resourceTypePluginName;
+	}
+
+	public void setResourceTypePluginName(String resourceTypePluginName) {
+		this.resourceTypePluginName = resourceTypePluginName;
 	}
 
 }

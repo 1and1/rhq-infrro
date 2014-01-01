@@ -17,6 +17,7 @@ import org.rhq.core.domain.configuration.Configuration;
 import org.rhq.core.domain.criteria.AlertDefinitionCriteria;
 import org.rhq.core.domain.criteria.MeasurementDefinitionCriteria;
 import org.rhq.core.domain.criteria.ResourceCriteria;
+import org.rhq.core.domain.criteria.ResourceGroupCriteria;
 import org.rhq.core.domain.criteria.ResourceTypeCriteria;
 import org.rhq.core.domain.measurement.MeasurementDefinition;
 import org.rhq.core.domain.resource.Resource;
@@ -34,15 +35,16 @@ import org.rhq.enterprise.server.plugin.pc.ServerPluginComponent;
 import org.rhq.enterprise.server.plugin.pc.ServerPluginContext;
 import org.rhq.enterprise.server.resource.ResourceManagerLocal;
 import org.rhq.enterprise.server.resource.ResourceTypeManagerLocal;
+import org.rhq.enterprise.server.resource.group.ResourceGroupManagerLocal;
 import org.rhq.enterprise.server.util.LookupUtil;
 
 /**
- * 
  * Class usage : Server plugin for importing/exporting alert definitions from/in an XML file.
  * 
- * TODO upload/download file Normally this should download/upload a file from the browser but this is not possible because server
+ * TODO upload/download file 
+ * Normally this should download/upload a file from the browser but this is not possible because server
  * plugins are limited, I cannot put here a {@link FileUploadForm} and also I would need to add a servlet in coregui, which is
- * beyond the scope of a server plugin. So it works with a file in the RHQ server file-system instead.
+ * beyond the scope of a server plugin. So it works with a file on the RHQ server file-system instead.
  * 
  * TODO {@link AlertDefinition} should be JAXB marshal-able, to avoid complications in java-xml transformation. 
  * some fields should be XmlTransient and some not: 
@@ -76,6 +78,8 @@ public class AlertDefImpexComponent implements ServerPluginComponent, ControlFac
 	private ResourceManagerLocal resourceManager;
 	
 	private ResourceTypeManagerLocal resourceTypeManager;
+	
+	private ResourceGroupManagerLocal resourceGroupManager;
 
 	private Subject subject;
 
@@ -97,8 +101,14 @@ public class AlertDefImpexComponent implements ServerPluginComponent, ControlFac
 		resourceManager = LookupUtil.getResourceManager();
 		measurementDefinitionManager = LookupUtil.getMeasurementDefinitionManager();
 		resourceTypeManager = LookupUtil.getResourceTypeManager();
+		resourceGroupManager = LookupUtil.getResourceGroupManager();
 
-		onlyExportTemplates = Boolean.valueOf(parameters.getSimpleValue("Templates", "false"));
+		if (parameters != null) {
+			String simpleValue = parameters.getSimpleValue("Templates", "false");
+			if (simpleValue != null) {
+				onlyExportTemplates = Boolean.valueOf(simpleValue);
+			}
+		}
 
 		if ("exportDefinitions".equals(name)) {
 			doExport(results);
@@ -205,19 +215,27 @@ public class AlertDefImpexComponent implements ServerPluginComponent, ControlFac
 				// after I have created the REAL alert definition object, I persist it
 				
 				String resourceTypeName = alertDefWrapper.getResourceTypeName();
-				if (alertDef.getResourceType() != null) {
+				if (resourceTypeName != null) {
 					resourceTypeCriteria = new ResourceTypeCriteria();
 					resourceTypeCriteria.addFilterName(resourceTypeName);
-					PageList<ResourceType> resourceTypes = 	resourceTypeManager.findResourceTypesByCriteria(subject, resourceTypeCriteria);
-					ResourceType resourceType = resourceTypes.get(0);
-					if (resourceType == null) {
-						logger.info("couldn't find resource type with name " + resourceTypeName + ". Aborting the creation of this alert definition.");
-					} else {
+					resourceTypeCriteria.addFilterPluginName(alertDefWrapper.getResourceTypePluginName());
+					PageList<ResourceType> resourceTypes = resourceTypeManager.findResourceTypesByCriteria(subject, resourceTypeCriteria);
+//					ResourceType resourceType = resourceTypes.get(0);
+					for (ResourceType resourceType : resourceTypes) {
 						Integer resourceTypeId = ((ResourceType) resourceType).getId();
 						alertDefinitionTemplateManager.createAlertTemplate(subject, alertDef, resourceTypeId);
 					}
-				} else if (alertDef.getGroup() != null) {
-					alertDefinitionGroupManager.createGroupAlertDefinitions(subject, alertDef, alertDef.getGroup().getId());
+				} else if (alertDefWrapper.getGroupName() != null) {
+					ResourceGroupCriteria groupCriteria = new ResourceGroupCriteria();
+					groupCriteria.addFilterName(alertDefWrapper.getGroupName());
+					//TODO improve search
+//					groupCriteria.addFilterPluginName(filterPluginName);
+//					groupCriteria.addFilterResourceTypeName(filterResourceTypeName);
+					PageList<ResourceGroup> groups = resourceGroupManager.findResourceGroupsByCriteria(subject, groupCriteria);
+					if (groups.size() > 0) {
+						ResourceGroup group = groups.get(0);
+						alertDefinitionGroupManager.createGroupAlertDefinitions(subject, alertDef, group.getId());
+					}
 				} else {
 					// find the resource to create the alert def on it
 					criteria = new ResourceCriteria();
@@ -227,9 +245,14 @@ public class AlertDefImpexComponent implements ServerPluginComponent, ControlFac
 
 					PageList<Resource> resources = resourceManager.findResourcesByCriteria(subject, criteria);
 
-					// theoretically there may be more resources with the same name and the same type !!! oare ?
-					Resource resource = resources.get(0);
-					alertDefinitionManager.createAlertDefinitionInNewTransaction(subject, alertDef, resource.getId(), false);
+					if (resources.size() > 0) {
+						// theoretically there can be more resources with the same name and the same type. is it ?
+						Resource resource = resources.get(0);
+						alertDefinitionManager.createAlertDefinitionInNewTransaction(subject, alertDef, resource.getId(), false);
+					} else {
+						logger.info("Couldn't find a resource with this name: " + alertDefWrapper.getResourceName() 
+								+ ". Aborting the creation of this alert definition.");
+					}
 				}
 			}
 
